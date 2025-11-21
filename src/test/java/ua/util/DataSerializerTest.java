@@ -31,7 +31,7 @@ class DataSerializerTest {
         // same size
         assertEquals(products.size(), restored.size());
 
-        // check values
+        // check valuess
         assertEquals(products.get(0).getName(), restored.get(0).getName());
         assertEquals(products.get(0).getPrice(), restored.get(0).getPrice());
         assertEquals(products.get(0).getStock(), restored.get(0).getStock());
