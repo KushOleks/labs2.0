@@ -1,25 +1,55 @@
 package ua.model;
 
+import ua.exceptions.InvalidDataException;
 import ua.util.Utils;
+
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
+import java.util.logging.Logger;
 
 public class Product implements Comparable<Product> {
+
+    private static final Logger logger = Logger.getLogger(Product.class.getName());
 
     private String name;
     private double price;
     private int stock;
     private LocalDate createdDate;
 
+    // Порожній конструктор залишаємо для Jackson (лаб. 7)
     public Product() {
     }
 
     public Product(String name, double price, int stock, LocalDate createdDate) {
-        setName(name);
-        setPrice(price);
-        setStock(stock);
-        setCreatedDate(createdDate);
+        List<String> errors = new ArrayList<>();
+
+        if (!Utils.isValidString(name)) {
+            errors.add("name: cannot be empty");
+        }
+        if (price < 0) {
+            errors.add("price: must be >= 0");
+        }
+        if (stock < 0) {
+            errors.add("stock: must be >= 0");
+        }
+        if (!Utils.isValidDate(createdDate)) {
+            errors.add("createdDate: invalid");
+        }
+
+        if (!errors.isEmpty()) {
+            logger.warning("Product creation failed: " + errors);
+            throw new InvalidDataException(errors);
+        }
+
+        this.name = name;
+        this.price = price;
+        this.stock = stock;
+        this.createdDate = createdDate;
+
+        logger.info("Product created: " + this);
     }
 
     public static Product create(String name, double price, int stock, LocalDate createdDate) {
@@ -27,34 +57,42 @@ public class Product implements Comparable<Product> {
     }
 
     public String getName() { return name; }
+
     public void setName(String name) {
         if (!Utils.isValidString(name)) {
-            throw new IllegalArgumentException("Invalid product name");
+            throw new InvalidDataException("name: cannot be empty");
         }
+        logger.info("Updating product name from '" + this.name + "' to '" + name + "'");
         this.name = name;
     }
 
     public double getPrice() { return price; }
+
     public void setPrice(double price) {
         if (price < 0) {
-            throw new IllegalArgumentException("Invalid price");
+            throw new InvalidDataException("price: must be >= 0");
         }
+        logger.info("Updating product price from " + this.price + " to " + price);
         this.price = price;
     }
 
     public int getStock() { return stock; }
+
     public void setStock(int stock) {
         if (stock < 0) {
-            throw new IllegalArgumentException("Invalid stock");
+            throw new InvalidDataException("stock: must be >= 0");
         }
+        logger.info("Updating product stock from " + this.stock + " to " + stock);
         this.stock = stock;
     }
 
     public LocalDate getCreatedDate() { return createdDate; }
+
     public void setCreatedDate(LocalDate createdDate) {
         if (!Utils.isValidDate(createdDate)) {
-            throw new IllegalArgumentException("Invalid created date");
+            throw new InvalidDataException("createdDate: invalid");
         }
+        logger.info("Updating product createdDate from " + this.createdDate + " to " + createdDate);
         this.createdDate = createdDate;
     }
 

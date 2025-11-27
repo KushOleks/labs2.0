@@ -1,10 +1,17 @@
 package ua.model;
 
+import ua.exceptions.InvalidDataException;
 import ua.util.Utils;
+
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.logging.Logger;
 
 public class Customer implements Comparable<Customer>, Cloneable {
+
+    private static final Logger logger = Logger.getLogger(Customer.class.getName());
 
     private String firstName;
     private String lastName;
@@ -12,10 +19,32 @@ public class Customer implements Comparable<Customer>, Cloneable {
     protected LocalDate registrationDate;
 
     public Customer(String firstName, String lastName, String email, LocalDate registrationDate) {
-        setFirstName(firstName);
-        setLastName(lastName);
-        setEmail(email);
-        setRegistrationDate(registrationDate);
+        List<String> errors = new ArrayList<>();
+
+        if (!Utils.isValidString(firstName)) {
+            errors.add("firstName: cannot be empty");
+        }
+        if (!Utils.isValidString(lastName)) {
+            errors.add("lastName: cannot be empty");
+        }
+        if (!isValidEmail(email)) {
+            errors.add("email: invalid");
+        }
+        if (!Utils.isValidDate(registrationDate)) {
+            errors.add("registrationDate: invalid");
+        }
+
+        if (!errors.isEmpty()) {
+            logger.warning("Customer creation failed: " + errors);
+            throw new InvalidDataException(errors);
+        }
+
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.registrationDate = registrationDate;
+
+        logger.info("Customer created: " + this);
     }
 
     public static Customer create(String firstName, String lastName, String email, LocalDate registrationDate) {
@@ -23,33 +52,49 @@ public class Customer implements Comparable<Customer>, Cloneable {
     }
 
     public String getFirstName() { return firstName; }
+
     public void setFirstName(String firstName) {
         if (!Utils.isValidString(firstName)) {
-            throw new IllegalArgumentException("Invalid first name");
+            throw new InvalidDataException("firstName: cannot be empty");
         }
+        logger.info("Updating firstName from '" + this.firstName + "' to '" + firstName + "'");
         this.firstName = firstName;
     }
 
     public String getLastName() { return lastName; }
+
     public void setLastName(String lastName) {
         if (!Utils.isValidString(lastName)) {
-            throw new IllegalArgumentException("Invalid last name");
+            throw new InvalidDataException("lastName: cannot be empty");
         }
+        logger.info("Updating lastName from '" + this.lastName + "' to '" + lastName + "'");
         this.lastName = lastName;
     }
 
     public String getEmail() { return email; }
+
     public void setEmail(String email) {
-        Utils.validateEmail(email);
+        if (!isValidEmail(email)) {
+            throw new InvalidDataException("email: invalid");
+        }
+        logger.info("Updating email from '" + this.email + "' to '" + email + "'");
         this.email = email;
     }
 
     public LocalDate getRegistrationDate() { return registrationDate; }
+
     public void setRegistrationDate(LocalDate registrationDate) {
         if (!Utils.isValidDate(registrationDate)) {
-            throw new IllegalArgumentException("Invalid registration date");
+            throw new InvalidDataException("registrationDate: invalid");
         }
+        logger.info("Updating registrationDate from " + this.registrationDate + " to " + registrationDate);
         this.registrationDate = registrationDate;
+    }
+
+    private static boolean isValidEmail(String email) {
+        if (email == null || email.isBlank()) return false;
+        // Простий, але адекватний варіант
+        return email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
     }
 
     @Override
@@ -93,6 +138,7 @@ public class Customer implements Comparable<Customer>, Cloneable {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     protected void finalize() throws Throwable {
         System.out.println("Customer object is being garbage collected: " + this.firstName);
         super.finalize();
