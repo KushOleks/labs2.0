@@ -49,3 +49,9 @@ tasks.register('runConcurrency', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'ua.MainConcurrency'
 }
+tasks.register('runClient', JavaExec) {
+    group = 'application'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ua.web.client.RestClientMain'
+    jvmArgs '-Dfile.encoding=UTF-8'
+}
