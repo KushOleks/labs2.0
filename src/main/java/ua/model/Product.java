@@ -19,7 +19,7 @@ public class Product implements Comparable<Product> {
     private int stock;
     private LocalDate createdDate;
 
-    // Порожній конструктор залишаємо для Jackson (лаб. 7)
+    // Порожній конструктор залишаємо для Jackson
     public Product() {
     }
 

@@ -60,4 +60,7 @@ public class DataSerializer {
             throw new DataSerializationException("Error reading YAML file", e);
         }
     }
+    public static <T> List<T> readFromJson(String filePath, Class<T> type) {
+        return fromJSON(filePath, type);
+    }
 }
