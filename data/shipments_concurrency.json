@@ -1,0 +1,20 @@
+[ {
+  "order" : {
+    "customer" : {
+      "firstName" : "Ivan",
+      "lastName" : "Ivanov",
+      "email" : "ivan@example.com",
+      "registrationDate" : "2025-11-28"
+    },
+    "products" : [ {
+      "name" : "Phone",
+      "price" : 500.0,
+      "stock" : 10,
+      "createdDate" : "2024-01-01"
+    } ],
+    "orderDate" : "2025-11-28",
+    "totalAmount" : 500.0
+  },
+  "shipmentDate" : "2025-11-28",
+  "trackingNumber" : "TRACK123"
+} ]

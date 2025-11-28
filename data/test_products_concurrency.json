@@ -1,0 +1,16 @@
+[ {
+  "name" : "P1",
+  "price" : 100.0,
+  "stock" : 1,
+  "createdDate" : "2025-11-28"
+}, {
+  "name" : "P2",
+  "price" : 200.0,
+  "stock" : 2,
+  "createdDate" : "2025-11-28"
+}, {
+  "name" : "P3",
+  "price" : 300.0,
+  "stock" : 3,
+  "createdDate" : "2025-11-28"
+} ]

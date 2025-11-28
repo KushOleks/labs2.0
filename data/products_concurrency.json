@@ -1,0 +1,16 @@
+[ {
+  "name" : "Phone",
+  "price" : 500.0,
+  "stock" : 10,
+  "createdDate" : "2024-01-01"
+}, {
+  "name" : "TV",
+  "price" : 1500.0,
+  "stock" : 5,
+  "createdDate" : "2023-05-10"
+}, {
+  "name" : "Laptop",
+  "price" : 2500.0,
+  "stock" : 2,
+  "createdDate" : "2022-03-03"
+} ]

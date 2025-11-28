@@ -1,0 +1,11 @@
+[ {
+  "firstName" : "Ivan",
+  "lastName" : "Ivanov",
+  "email" : "ivan@example.com",
+  "registrationDate" : "2025-11-28"
+}, {
+  "firstName" : "Petro",
+  "lastName" : "Petrenko",
+  "email" : "petro@example.com",
+  "registrationDate" : "2025-11-28"
+} ]
