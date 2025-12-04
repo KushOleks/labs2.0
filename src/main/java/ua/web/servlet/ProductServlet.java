@@ -2,22 +2,60 @@ package ua.web.servlet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import ua.model.Product;
+import ua.util.DataSerializer;
 import ua.util.GenericRepository;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
+import java.util.logging.Logger;
 
 public class ProductServlet extends HttpServlet {
 
+    private static final Logger log = Logger.getLogger(ProductServlet.class.getName());
     private static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new JavaTimeModule());
+
+    /* ---------- lifecycle logging ---------- */
+    @Override
+    public void init() throws ServletException {
+        log.info(getClass().getSimpleName() + " init()");
+        super.init();
+    }
+
+    @Override
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        log.info(req.getMethod() + " " + req.getRequestURI() +
+                (req.getQueryString() != null ? ("?" + req.getQueryString()) : ""));
+        super.service(req, resp);
+    }
+
+    @Override
+    public void destroy() {
+        log.info(getClass().getSimpleName() + " destroy()");
+        super.destroy();
+    }
+    /* -------------------------------------- */
 
     private GenericRepository<Product> repo(HttpServletRequest req) {
         return (GenericRepository<Product>) req.getServletContext().getAttribute("productRepo");
+    }
+
+    private String dataFile(HttpServletRequest req) {
+        return (String) req.getServletContext().getAttribute("productDataFile");
+    }
+
+    private void persist(HttpServletRequest req) {
+        DataSerializer.toJSON(repo(req).getAll(), dataFile(req));
+    }
+
+    private static void jsonError(HttpServletResponse resp, int code, String msg) throws IOException {
+        resp.setStatus(code);
+        resp.setContentType("application/json; charset=UTF-8");
+        MAPPER.writeValue(resp.getWriter(), java.util.Map.of("error", msg));
     }
 
     @Override
@@ -30,8 +68,7 @@ public class ProductServlet extends HttpServlet {
         } else {
             Product p = repo(req).findByIdentity(name);
             if (p == null) {
-                resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                resp.getWriter().write("{\"error\":\"not found\"}");
+                jsonError(resp, HttpServletResponse.SC_NOT_FOUND, "not found");
             } else {
                 MAPPER.writeValue(resp.getWriter(), p);
             }
@@ -40,54 +77,66 @@ public class ProductServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        Product p = MAPPER.readValue(req.getInputStream(), Product.class);
-        if (repo(req).findByIdentity(p.getName()) != null) {
-            resp.setStatus(HttpServletResponse.SC_CONFLICT);
-            resp.getWriter().write("{\"error\":\"already exists\"}");
-            return;
+        try {
+            Product p = MAPPER.readValue(req.getInputStream(), Product.class);
+            if (p.getName() == null || p.getName().isBlank()) {
+                jsonError(resp, HttpServletResponse.SC_BAD_REQUEST, "name is required");
+                return;
+            }
+            if (repo(req).findByIdentity(p.getName()) != null) {
+                jsonError(resp, HttpServletResponse.SC_CONFLICT, "already exists");
+                return;
+            }
+            repo(req).add(p);
+            persist(req);
+            resp.setStatus(HttpServletResponse.SC_CREATED);
+            resp.setContentType("application/json; charset=UTF-8");
+            MAPPER.writeValue(resp.getWriter(), p);
+        } catch (Exception ex) {
+            jsonError(resp, HttpServletResponse.SC_BAD_REQUEST, "invalid JSON: " + ex.getMessage());
         }
-        repo(req).add(p);
-        resp.setStatus(HttpServletResponse.SC_CREATED);
-        MAPPER.writeValue(resp.getWriter(), p);
     }
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String name = req.getParameter("name");
-        if (name == null) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("{\"error\":\"param 'name' required\"}");
+        if (name == null || name.isBlank()) {
+            jsonError(resp, HttpServletResponse.SC_BAD_REQUEST, "param 'name' required");
             return;
         }
-        GenericRepository<Product> r = repo(req);
-        Product existed = r.findByIdentity(name);
+        Product existed = repo(req).findByIdentity(name);
         if (existed == null) {
-            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            resp.getWriter().write("{\"error\":\"not found\"}");
+            jsonError(resp, HttpServletResponse.SC_NOT_FOUND, "not found");
             return;
         }
-        Product updated = MAPPER.readValue(req.getInputStream(), Product.class);
-        r.remove(existed);
-        r.add(updated);
-        MAPPER.writeValue(resp.getWriter(), updated);
+        try {
+            Product updated = MAPPER.readValue(req.getInputStream(), Product.class);
+            // upsert/replace
+            repo(req).remove(existed);
+            repo(req).add(updated);
+            persist(req);
+            resp.setContentType("application/json; charset=UTF-8");
+            MAPPER.writeValue(resp.getWriter(), updated);
+        } catch (Exception ex) {
+            jsonError(resp, HttpServletResponse.SC_BAD_REQUEST, "invalid JSON: " + ex.getMessage());
+        }
     }
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String name = req.getParameter("name");
-        if (name == null) {
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            resp.getWriter().write("{\"error\":\"param 'name' required\"}");
+        if (name == null || name.isBlank()) {
+            jsonError(resp, HttpServletResponse.SC_BAD_REQUEST, "param 'name' required");
             return;
         }
-        GenericRepository<Product> r = repo(req);
-        Product p = r.findByIdentity(name);
+        Product p = repo(req).findByIdentity(name);
         if (p == null) {
-            resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            resp.getWriter().write("{\"error\":\"not found\"}");
+            jsonError(resp, HttpServletResponse.SC_NOT_FOUND, "not found");
             return;
         }
-        r.remove(p);
-        resp.getWriter().write("{\"deleted\":\"" + name + "\"}");
+        repo(req).remove(p);
+        persist(req);
+        resp.setContentType("application/json; charset=UTF-8");
+        MAPPER.writeValue(resp.getWriter(), java.util.Map.of("deleted", name));
     }
 }

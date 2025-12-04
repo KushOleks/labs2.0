@@ -1,0 +1,4 @@
+[
+  {"name":"Phone","price":500.0,"stock":10,"createdDate":"2024-01-01"},
+  {"name":"TV","price":1500.0,"stock":5,"createdDate":"2023-05-10"}
+]

@@ -27,19 +27,22 @@ public class GenericRepository<T> {
         storage.add(item);
     }
 
-    // додано: масове додавання (синхронно)
+    // масове додавання (синхронно)
     public void addAll(Collection<T> items) {
         if (items == null || items.isEmpty()) return;
         logger.info(() -> thread() + "addAll: " + items.size() + " items");
         storage.addAll(items);
     }
 
+    // alias для зручності (якщо десь очікується addAllSync)
+    public void addAllSync(Collection<T> items) { addAll(items); }
+
     public void remove(T item) {
         logger.info(() -> thread() + "Removing: " + item);
         storage.remove(item);
     }
 
-    // додано: видалення за identity
+    // видалення за identity
     public boolean removeByIdentity(String identity) {
         T found = findByIdentity(identity);
         if (found == null) return false;
@@ -58,7 +61,7 @@ public class GenericRepository<T> {
                 .orElse(null);
     }
 
-    // додано: заміна елемента за identity (для PUT)
+    // заміна елемента за identity (для PUT)
     public boolean replaceByIdentity(String identity, T newValue) {
         for (int i = 0; i < storage.size(); i++) {
             T cur = storage.get(i);
@@ -71,7 +74,7 @@ public class GenericRepository<T> {
         return false;
     }
 
-    // додано: upsert — якщо є такий identity, замінюємо; якщо ні — додаємо
+    // upsert — якщо є такий identity, замінюємо; якщо ні — додаємо
     public void upsertByIdentity(String identity, T value) {
         if (!replaceByIdentity(identity, value)) {
             add(value);
@@ -118,7 +121,6 @@ public class GenericRepository<T> {
         return sorted;
     }
 
-    /* ---------- асинхронні bulk-операції ---------- */
 
     public CompletableFuture<Void> addAllAsync(List<T> items) {
         return CompletableFuture.runAsync(() -> {
